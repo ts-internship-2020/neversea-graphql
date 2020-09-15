@@ -1,1 +1,0 @@
-# neversea-graphql
