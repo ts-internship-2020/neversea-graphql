@@ -75,6 +75,11 @@ input ConferenceFilterInput {
     organizerEmail: String
 }
 
+input Attendee {
+    attendeeEmail: String!
+    conferenceId: ID!
+}
+
 extend type Query {
     conference(id: ID!): Conference!
     conferenceList(pager: PagerInput, filters: ConferenceFilterInput): ConferenceList
@@ -83,6 +88,11 @@ extend type Query {
     countryList: [Country!]!
     countyList: [County!]!
     cityList: [City!]!
+}
+
+extend type Mutation {
+    attend(input: Attendee!): String
+    withdraw(input: Attendee!): String    
 }
 `;
 
