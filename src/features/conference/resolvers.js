@@ -29,6 +29,10 @@ const conferenceResolvers = {
         cityList: async (_parent, _args, { dataSources }, _info) => {
             const data = await dataSources.conferenceDb.getCityList();
             return data
+        }, 
+        attendeeList: async (_parent, { conferenceId }, { dataSources }, _info) => {
+            const data = await dataSources.conferenceDb.getAttendeeList(conferenceId);
+            return data
         }
       },
 
@@ -42,8 +46,31 @@ const conferenceResolvers = {
             const updateInput = {...input, statusId: 2}
             const statusId = await dataSources.conferenceDb.updateConferenceXAttendee(updateInput);
             return statusId
-        }
-      },
+        }, 
+        join: async (_parent, { input }, { dataSources }, _info) => {
+            const updateInput = {...input, statusId: 1}
+            const statusId = await dataSources.conferenceDb.updateConferenceXAttendee(updateInput);
+            return statusId
+        }, 
+        saveConference: async (_parent, { input }, { dataSources }, _info) => {
+            const location = await dataSources.conferenceDb.updateLocation(input.location);
+
+            const updatedConference = await dataSources.conferenceDb.updateConference(input);
+
+            //Promise.all takes an iterable of promises and returns a single promise 
+            const speakers = await Promise.all(input.speakers.map(async speaker => {
+                const updatedSpeaker = await dataSources.conferenceDb.updateSpeaker(speaker);
+                const isMainSpeaker = await dataSources.conferenceDb.updateConferenceXSpeaker({
+                    conferenceId: updatedConference.id,
+                    speakerId: updatedSpeaker.id,
+                    isMainSpeaker: speaker.isMainSpeaker
+                })
+                return {...updatedSpeaker, isMainSpeaker}
+            }));
+
+            input.deletedSpeakers && input.deletedSpeakers.length > 0 && await dataSources.conferenceDb.deleteSpeaker(input.deletedSpeakers);
+            return { ...updatedConference, location, speakers }
+      }},
 
       ConferenceList: {
         pagination: async (_parent, { pager, filters }, { dataSources }, _info) => {
